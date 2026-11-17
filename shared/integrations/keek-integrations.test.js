@@ -131,3 +131,96 @@ test('manager: blank fields keep saved secrets, list() never exposes them', asyn
   assert.equal(l.slack.connected, false);
   await assert.rejects(mgr.send('slack', payload()), e => e.code === 'invalid');
 });
+
+/* ---------------- calendars (.ics) ---------------- */
+const ICS = [
+  'BEGIN:VCALENDAR', 'X-WR-CALNAME:Work',
+  'BEGIN:VTIMEZONE', 'TZID:Egypt Standard Time', 'BEGIN:STANDARD', 'TZOFFSETTO:+0200', 'END:STANDARD', 'END:VTIMEZONE',
+  // weekly stand-up Mon/Wed 10:00 Cairo, Meet link in a folded description, one cancelled instance
+  'BEGIN:VEVENT', 'UID:standup', 'SUMMARY:Stand-up', 'DTSTART;TZID=Africa/Cairo:20261102T100000', 'DTEND;TZID=Africa/Cairo:20261102T101500',
+  'RRULE:FREQ=WEEKLY;BYDAY=MO,WE', 'EXDATE;TZID=Africa/Cairo:20261118T100000',
+  'DESCRIPTION:Join: https://meet.google.com/ab', ' c-defg-hij\\nThanks', 'END:VEVENT',
+  // Outlook-style Windows zone name, Teams link
+  'BEGIN:VEVENT', 'UID:review', 'SUMMARY:Design review', 'DTSTART;TZID=Egypt Standard Time:20261119T140000', 'DURATION:PT1H',
+  'X-MICROSOFT-SKYPETEAMSMEETINGURL:https://teams.microsoft.com/l/meetup-join/19%3ameeting_x', 'ATTENDEE;CN=Omar:mailto:o@x.co', 'END:VEVENT',
+  // cancelled and past events are ignored
+  'BEGIN:VEVENT', 'UID:gone', 'SUMMARY:Cancelled', 'STATUS:CANCELLED', 'DTSTART:20261119T090000Z', 'END:VEVENT',
+  'BEGIN:VEVENT', 'UID:old', 'SUMMARY:Old', 'DTSTART:20250101T090000Z', 'END:VEVENT',
+  // monthly on the last Friday, 3 times, UTC
+  'BEGIN:VEVENT', 'UID:retro', 'SUMMARY:Retro', 'DTSTART:20261030T120000Z', 'DTEND:20261030T130000Z', 'RRULE:FREQ=MONTHLY;BYDAY=-1FR;COUNT=3', 'END:VEVENT',
+  'END:VCALENDAR'
+].join('\r\n');
+
+test('ics: recurring events, time zones, exceptions, meeting links', () => {
+  const cal = KI.utils.parseICS(ICS);
+  assert.equal(cal.name, 'Work');
+  const now = Date.parse('2026-11-17T00:00:00Z');
+  const ev = KI.utils.upcoming(cal, 14, now);
+  const stand = ev.filter(e => e.title === 'Stand-up').map(e => e.start);
+  // Mon 23 + Wed 25 + Mon 30 (Wed 18 is excluded); Cairo is UTC+2 in winter
+  assert.deepEqual(stand, ['2026-11-23T08:00:00.000Z', '2026-11-25T08:00:00.000Z', '2026-11-30T08:00:00.000Z']);
+  const s0 = ev.find(e => e.title === 'Stand-up');
+  assert.equal(s0.url, 'https://meet.google.com/abc-defg-hij');
+  assert.equal(s0.platform, 'meet');
+  const rev = ev.find(e => e.title === 'Design review');
+  assert.equal(rev.start, '2026-11-19T12:00:00.000Z');
+  assert.equal(rev.end, '2026-11-19T13:00:00.000Z');
+  assert.equal(rev.platform, 'teams');
+  assert.deepEqual(rev.attendees, ['Omar']);
+  assert.ok(!ev.some(e => e.title === 'Cancelled' || e.title === 'Old'));
+  assert.deepEqual(ev.filter(e => e.title === 'Retro').map(e => e.start), ['2026-11-27T12:00:00.000Z']);
+});
+
+test('ics: daily rule crosses month ends; UNTIL is respected', () => {
+  const cal = KI.utils.parseICS('BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:d\nSUMMARY:Daily\nDTSTART:20261129T090000Z\nRRULE:FREQ=DAILY;UNTIL=20261202T090000Z\nEND:VEVENT\nEND:VCALENDAR');
+  const ev = KI.utils.upcoming(cal, 30, Date.parse('2026-11-28T00:00:00Z'));
+  assert.deepEqual(ev.map(e => e.start.slice(0, 10)), ['2026-11-29', '2026-11-30', '2026-12-01', '2026-12-02']);
+});
+
+test('calendar connect: webcal links work, non-calendar responses are explained', async () => {
+  const f = mockFetch(url => url.includes('bad') ? new Response('<html>login</html>') : new Response(ICS));
+  const I = KI.create({ fetch: f });
+  const { cfg, info } = await I.connect('gcal', { url: 'webcal://calendar.google.com/calendar/ical/x/private-y/basic.ics' });
+  assert.equal(cfg.url, 'https://calendar.google.com/calendar/ical/x/private-y/basic.ics');
+  assert.equal(info.calendar, 'Work');
+  await assert.rejects(I.connect('outlook', { url: 'https://outlook.office365.com/bad.ics' }), e => e.code === 'invalid' && /Publish a calendar/.test(e.message));
+  const events = await I.run('gcal', cfg, 'events', { days: 7 });
+  assert.ok(Array.isArray(events));
+  await assert.rejects(I.run('gcal', cfg, 'transcript', {}), e => e.code === 'invalid');
+});
+
+/* ---------------- Zoom ---------------- */
+test('zoom: server-to-server token, upcoming meetings, transcript import', async () => {
+  const VTT = 'WEBVTT\n\n1\n00:00:05.120 --> 00:00:08.000\nSara Adel: Let us start.\n\n2\n01:02:03.000 --> 01:02:05.000\nOmar: Done.\n';
+  const f = mockFetch((url, init) => {
+    if (url.startsWith('https://zoom.us/oauth/token')) {
+      assert.equal(init.headers.Authorization, 'Basic ' + Buffer.from('cid:csec').toString('base64'));
+      assert.match(url, /account_id=acc/);
+      return json({ access_token: 'tok', expires_in: 3600 });
+    }
+    if (url.includes('/rec/download')) { assert.match(url, /access_token=tok/); return new Response(VTT); }
+    assert.equal(init.headers.Authorization, 'Bearer tok');
+    if (url.endsWith('/users/sara%40x.co')) return json({ display_name: 'Sara', email: 'sara@x.co' });
+    if (url.includes('/meetings?type=upcoming')) return json({ meetings: [{ id: 9, topic: 'Client call', start_time: new Date(Date.now() + 36e5).toISOString(), duration: 30, join_url: 'https://zoom.us/j/9' }] });
+    if (url.includes('/recordings?')) return json({ meetings: [{ uuid: '/ab//c==', topic: 'Old call', start_time: '2026-11-10T10:00:00Z', duration: 62, recording_files: [{ file_type: 'TRANSCRIPT' }] }] });
+    if (url.includes('/meetings/%252Fab%252F%252Fc%253D%253D/recordings')) return json({ topic: 'Old call', start_time: '2026-11-10T10:00:00Z', recording_files: [{ file_type: 'MP4' }, { file_type: 'TRANSCRIPT', download_url: 'https://zoom.us/rec/download/xyz' }] });
+    return json({ message: 'unexpected ' + url }, 404);
+  });
+  const I = KI.create({ fetch: f });
+  await assert.rejects(I.connect('zoom', { accountId: 'acc', clientId: 'cid' }), e => e.field === 'clientSecret');
+  const { cfg, info } = await I.connect('zoom', { accountId: 'acc', clientId: 'cid', clientSecret: 'csec', user: 'sara@x.co' });
+  assert.equal(info.user, 'Sara');
+  const ev = await I.run('zoom', cfg, 'events', {});
+  assert.equal(ev[0].url, 'https://zoom.us/j/9');
+  assert.equal(ev[0].platform, 'zoom');
+  const recs = await I.run('zoom', cfg, 'recordings', {});
+  assert.equal(recs[0].hasTranscript, true);
+  const tr = await I.run('zoom', cfg, 'transcript', { id: recs[0].id });
+  assert.equal(tr.text, '[00:05] Sara Adel: Let us start.\n[1:02:03] Omar: Done.');
+  assert.equal(f.calls.filter(c => c.url.includes('oauth/token')).length, 1); // token cached
+});
+
+test('zoom: bad app credentials give a clear message', async () => {
+  const f = mockFetch(() => json({ reason: 'Invalid client_id or client_secret', error: 'invalid_client' }, 400));
+  await assert.rejects(KI.create({ fetch: f }).connect('zoom', { accountId: 'a', clientId: 'b', clientSecret: 'c' }), e => e.code === 'auth' && /Server-to-Server/.test(e.message));
+});

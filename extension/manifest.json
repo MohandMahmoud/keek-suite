@@ -20,7 +20,13 @@
     "https://hooks.slack.com/*",
     "https://api.notion.com/*",
     "https://api.linear.app/*",
-    "https://*.atlassian.net/*"
+    "https://*.atlassian.net/*",
+    "https://calendar.google.com/*",
+    "https://outlook.office365.com/*",
+    "https://outlook.office.com/*",
+    "https://outlook.live.com/*",
+    "https://zoom.us/*",
+    "https://*.zoom.us/*"
   ],
   "optional_host_permissions": ["https://*/*", "http://localhost/*"],
   "content_scripts": [

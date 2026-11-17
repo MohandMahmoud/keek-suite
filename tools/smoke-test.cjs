@@ -192,6 +192,58 @@ const ANALYSIS = {
     await click('[data-act="modalClose"]');
   });
 
+  await step('calendar + Zoom: upcoming meetings on the dashboard, record one, import a Zoom transcript', async () => {
+    const z = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+    const t0 = new Date(Date.now() + 2 * 36e5), t1 = new Date(t0.getTime() + 30 * 6e4);
+    const ics = ['BEGIN:VCALENDAR', 'X-WR-CALNAME:Work', 'BEGIN:VEVENT', 'UID:e1', 'SUMMARY:Client sync', 'DTSTART:' + z(t0), 'DTEND:' + z(t1),
+      'DESCRIPTION:Join https://meet.google.com/abc-defg-hij', 'ATTENDEE;CN=Nour:mailto:n@x.co', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    await page.route('https://calendar.google.com/**', route => route.fulfill({ status: 200, headers: cors, contentType: 'text/calendar', body: ics }));
+    const zs = new Date(Date.now() + 26 * 36e5).toISOString();
+    await page.route(/https:\/\/(api\.)?zoom\.us\/.*/, route => {
+      const req = route.request(), url = req.url();
+      if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+      const j = body => route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify(body) });
+      if (url.includes('/oauth/token')) return j({ access_token: 'tok', expires_in: 3600 });
+      if (url.includes('/rec/download')) return route.fulfill({ status: 200, headers: cors, contentType: 'text/vtt', body: 'WEBVTT\n\n1\n00:00:04.000 --> 00:00:06.000\nNour: Budget is approved.\n' });
+      if (/\/users\/[^/]+$/.test(url.split('?')[0])) return j({ display_name: 'Sara', email: 's@x.co' });
+      if (url.includes('/meetings?type=upcoming')) return j({ meetings: [{ id: 5, topic: 'Zoom standup', start_time: zs, duration: 15, join_url: 'https://zoom.us/j/5' }] });
+      if (url.includes('/recordings?')) return j({ meetings: [{ uuid: 'u1==', topic: 'Budget review', start_time: '2026-11-10T10:00:00Z', duration: 40, recording_files: [{ file_type: 'TRANSCRIPT' }] }] });
+      if (url.includes('/meetings/u1%3D%3D/recordings')) return j({ topic: 'Budget review', start_time: '2026-11-10T10:00:00Z', recording_files: [{ file_type: 'TRANSCRIPT', download_url: 'https://zoom.us/rec/download/abc' }] });
+      return route.fulfill({ status: 404, headers: cors, body: '{}' });
+    });
+    await click('[data-act="nav"][data-to="integrations"]');
+    await click('[data-act="kxIntEdit"][data-k="gcal"]');
+    await page.fill('[data-kxi="gcal:url"]', 'https://calendar.google.com/calendar/ical/x/private-y/basic.ics');
+    await click('[data-act="kxIntConnect"][data-k="gcal"]');
+    await page.waitForSelector('[data-act="kxIntRemove"][data-k="gcal"]');
+    await click('[data-act="kxIntEdit"][data-k="zoom"]');
+    await page.fill('[data-kxi="zoom:accountId"]', 'acc');
+    await page.fill('[data-kxi="zoom:clientId"]', 'cid');
+    await page.fill('[data-kxi="zoom:clientSecret"]', 'csec');
+    await page.fill('[data-kxi="zoom:user"]', 's@x.co');
+    await click('[data-act="kxIntConnect"][data-k="zoom"]');
+    await page.waitForSelector('[data-act="kxIntRemove"][data-k="zoom"]');
+
+    // an earlier step left a recording in review; discard it so "Record" can start a new one
+    await page.evaluate(() => { if (REC.state === 'stopped') CONFIRM.discardRecording(); });
+    await click('[data-act="nav"][data-to="dashboard"]');
+    await page.waitForFunction(() => document.body.innerText.includes('Client sync') && document.body.innerText.includes('Zoom standup'), null, { timeout: 8000 });
+    await page.screenshot({ path: path.join(OUT, '8c-upcoming.png') });
+    await click('[data-act="kxRecEvent"][data-i="0"]');
+    await page.waitForSelector('[data-act="recStart"]');
+    const form = await page.evaluate(() => ({ title: REC.form.title, url: REC.form.url, platform: REC.form.platform, ppl: REC.form.participants }));
+    if (form.title !== 'Client sync' || form.platform !== 'meet' || form.url !== 'https://meet.google.com/abc-defg-hij' || form.ppl !== 'Nour') throw new Error('record form not prefilled: ' + JSON.stringify(form));
+
+    await click('[data-act="nav"][data-to="integrations"]');
+    await click('[data-act="kxZoomRecs"]');
+    await page.waitForSelector('[data-act="kxZoomImport"]');
+    await click('[data-act="kxZoomImport"][data-i="0"]');
+    await page.waitForFunction(() => { const t = document.querySelector('#imText'); return t && t.value.includes('Budget is approved'); }, null, { timeout: 8000 });
+    if ((await page.inputValue('#imText')) !== '[00:04] Nour: Budget is approved.') throw new Error('zoom transcript not prefilled');
+    if ((await page.inputValue('#imTitle')) !== 'Budget review') throw new Error('zoom title not prefilled');
+    await click('[data-act="modalClose"]');
+  });
+
   await step('English UI + dark theme render', async () => {
     await click('[data-act="setLang"]');
     await click('[data-act="nav"][data-to="integrations"]');

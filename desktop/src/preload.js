@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('keekNative', {
   intOptions: (kind, patch) => ipcRenderer.invoke('int:options', kind, patch),
   intRemove: kind => ipcRenderer.invoke('int:remove', kind),
   intSend: (kind, payload) => ipcRenderer.invoke('int:send', kind, payload),
+  intRun: (kind, op, args) => ipcRenderer.invoke('int:run', kind, op, args),
   appInfo: () => ipcRenderer.invoke('app:info'),
   regenToken: () => ipcRenderer.invoke('bridge:regen'),
   onChunk: f => { chunkHandlers.add(f); },

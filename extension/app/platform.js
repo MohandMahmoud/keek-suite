@@ -72,11 +72,13 @@
   // called synchronously from the click handler, before anything is awaited.
   function askOrigin(kind, input) {
     if (!hasChrome || !chrome.permissions || !input) return Promise.resolve(true);
-    let raw = kind === 'webhooks' ? input.url : kind === 'jira' ? input.site : '';
+    let raw = kind === 'webhooks' || kind === 'gcal' || kind === 'outlook' ? input.url : kind === 'jira' ? input.site : '';
     if (!raw) return Promise.resolve(true);
+    raw = String(raw).trim().replace(/^webcal:\/\//i, 'https://');
     if (kind === 'jira' && !/^https?:\/\//i.test(raw)) raw = 'https://' + raw;
-    let u; try { u = new URL(String(raw).trim()); } catch (e) { return Promise.resolve(true); } // the module reports bad URLs
+    let u; try { u = new URL(raw); } catch (e) { return Promise.resolve(true); } // the module reports bad URLs
     if (kind === 'jira' && /\.atlassian\.net$/i.test(u.hostname)) return Promise.resolve(true);
+    if (/^(calendar\.google\.com|outlook\.(office365|office|live)\.com)$/i.test(u.hostname)) return Promise.resolve(true);
     return chrome.permissions.request({ origins: [u.protocol + '//' + u.hostname + '/*'] });
   }
   const intApi = intMgr && {
@@ -90,7 +92,8 @@
     },
     setOptions: (kind, patch) => intMgr.setOptions(kind, patch),
     remove: kind => intMgr.remove(kind),
-    send: (kind, payload) => intMgr.send(kind, payload)
+    send: (kind, payload) => intMgr.send(kind, payload),
+    run: (kind, op, args) => intMgr.run(kind, op, args)
   };
 
   /* ---------- window.claude shim (what the original app expects) ---------- */

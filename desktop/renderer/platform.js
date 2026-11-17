@@ -91,7 +91,8 @@
       connect: (kind, input) => call(N.intConnect(kind, input)),
       setOptions: (kind, patch) => call(N.intOptions(kind, patch)),
       remove: kind => call(N.intRemove(kind)),
-      send: (kind, payload) => call(N.intSend(kind, payload))
+      send: (kind, payload) => call(N.intSend(kind, payload)),
+      run: (kind, op, args) => call(N.intRun(kind, op, args))
     },
     info: () => call(N.appInfo()),
     openExternal: url => N.openExternal(url),

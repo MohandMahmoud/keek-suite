@@ -1,4 +1,4 @@
-# Integrations — Slack, Notion, Linear, Jira, webhooks
+# Integrations — Google Calendar, Outlook, Zoom, Slack, Notion, Linear, Jira, webhooks
 
 Each integration connects with a URL or token you paste into **Integrations → Connect**. KEEK checks
 it against the service before saving. You don't need an OAuth app or a server.
@@ -10,6 +10,24 @@ it against the service before saving. You don't need an OAuth app or a server.
 | **Linear** | A [personal API key](https://linear.app/settings/account/security) (+ team, asked for if you have several) | Creates one issue per open action item (title, description, owner, due date, transcript quotes). |
 | **Jira Cloud** | Site (`yourteam.atlassian.net`), account email, [API token](https://id.atlassian.com/manage-profile/security/api-tokens), project (asked for if you leave it blank) | Creates one issue per open action item. Uses the project's “Task” type, and leaves out the due date if the project's create screen doesn't have one. |
 | **Webhooks** | Any `https://` URL (Zapier, Make, n8n, your server), optional signing secret | POSTs JSON: `meeting`, `summary`, `actionItems`, `transcript`. Header `X-Keek-Event: meeting.summary` (`keek.test` when connecting). With a secret: `X-Keek-Signature: sha256=<HMAC-SHA256 of the raw body>`. Optional auto-send. |
+
+## Calendars and Zoom (read-only)
+
+| Service | What you paste | What KEEK does |
+|---|---|---|
+| **Google Calendar** | The calendar's **secret address in iCal format** (Settings → your calendar → Integrate calendar). [Help](https://support.google.com/calendar/answer/37648) | Lists the next two weeks on the dashboard under **Upcoming meetings**, with **Join** (Meet/Zoom/Teams link found in the event) and **Record** (opens the recorder with the title, link, platform and attendees filled in). |
+| **Outlook** | A published **ICS link** (Outlook on the web → Settings → Calendar → Shared calendars → Publish a calendar → “Can view all details”) | Same as Google Calendar. |
+| **Zoom** | Account ID, Client ID and Client Secret of a **Server-to-Server OAuth** app ([Zoom App Marketplace](https://marketplace.zoom.us/develop/create) → Develop → Build App), plus the Zoom user's email | Upcoming Zoom meetings on the dashboard, and **Import recordings**: picks a cloud recording from the last 30 days and opens KEEK's import sheet with its transcript, ready to review and analyse. |
+
+The calendar parser handles recurring events (daily, weekly, monthly and yearly, including “last Friday”-style rules),
+excluded and moved occurrences, cancelled events, and time zones, including Outlook's Windows zone names.
+The secret iCal link gives read access to your calendar. KEEK treats it like a password.
+
+Zoom app setup: add the scopes `user:read:user:admin`, `meeting:read:list_meetings:admin`,
+`cloud_recording:read:list_user_recordings:admin` and `cloud_recording:read:list_recording_files:admin`, then
+**activate** the app. Only an account owner or admin can create one. Transcripts need cloud recording (a paid
+Zoom plan) with **Create audio transcript** turned on. KEEK never gets live meeting audio from Zoom; record with
+the desktop app or extension for that.
 
 ## Sending
 
@@ -30,7 +48,7 @@ Open a meeting → **Share**. Every connected service is listed with a **Send** 
   desktop app or the extension.
 
 The extension has host permissions for `hooks.slack.com`, `api.notion.com`, `api.linear.app` and
-`*.atlassian.net`. For a webhook URL or a self-hosted Jira site, Chrome asks once for permission to
+`*.atlassian.net`, `calendar.google.com`, the Outlook calendar hosts and `zoom.us`. For a webhook URL, a calendar on another host or a self-hosted Jira site, Chrome asks once for permission to
 reach that address when you click **Connect**.
 
 ## Module

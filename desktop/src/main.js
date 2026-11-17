@@ -123,6 +123,7 @@ function registerIpc() {
   handle('int:options', (e, k, patch) => integrations.setOptions(kind(k), patch || {}));
   handle('int:remove', (e, k) => integrations.remove(kind(k)));
   handle('int:send', (e, k, payload) => integrations.send(kind(k), payload));
+  handle('int:run', (e, k, op, args) => integrations.run(kind(k), String(op || ''), args && typeof args === 'object' ? args : {}));
 
   handle('file:save', async (e, filename, data) => {
     const name = String(filename || 'keek.txt').replace(/[\\/:*?"<>|]/g, '').slice(0, 120) || 'keek.txt';

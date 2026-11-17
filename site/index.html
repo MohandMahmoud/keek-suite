@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KEEK — Download</title>
+<meta name="description" content="KEEK records your meetings, transcribes Arabic and English, and writes summaries, decisions and action items — free, on Windows, macOS and Linux.">
+<meta property="og:title" content="KEEK — free meeting recorder & AI notes">
+<meta property="og:description" content="Record any meeting, get Arabic & English transcripts, summaries and action items. Free for Windows, macOS and Linux.">
+<meta property="og:image" content="logo.jpg">
+<link rel="icon" href="logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAFAFA;--surface:#FFFFFF;--mist:#F4F4F2;--text:#111111;--muted:#5E5E5A;--border:#E6E6E6;
+  --primary:#111111;--primary-hover:#2B2B2B;--on-primary:#FFFFFF;--accent:#476D3A;--leaf:#B7E57D;--hl:#EEF3E2;
+  --warning:#8A5A12;--warning-bg:#FBF3E2;--shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+  --radius:18px;color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0D0D0D;--surface:#161616;--mist:#141414;--text:#F2F2F2;--muted:#A3A39E;--border:#2A2A2A;
+  --primary:#F2F2F2;--primary-hover:#FFFFFF;--on-primary:#111111;--accent:#B7E57D;--leaf:#3F5A33;--hl:#1C2416;
+  --warning:#E8B45A;--warning-bg:#2E2614;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0D0D0D;--surface:#161616;--mist:#141414;--text:#F2F2F2;--muted:#A3A39E;--border:#2A2A2A;
+  --primary:#F2F2F2;--primary-hover:#FFFFFF;--on-primary:#111111;--accent:#B7E57D;--leaf:#3F5A33;--hl:#1C2416;
+  --warning:#E8B45A;--warning-bg:#2E2614;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 "IBM Plex Sans Arabic","Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+html[lang="en"] body{font-family:"Inter","IBM Plex Sans Arabic",system-ui,sans-serif}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.ic{width:20px;height:20px;flex:none}
+/* header */
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.bar{display:flex;align-items:center;gap:12px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.02em;text-decoration:none}
+.brand img{width:34px;height:34px;border-radius:10px}
+.bar nav{margin-inline-start:auto;display:flex;gap:6px;align-items:center}
+.chip{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:999px;padding:7px 14px;font:inherit;font-size:14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.chip:hover{border-color:var(--text)}
+.hide-sm{display:inline-flex}
+/* hero */
+.hero{padding:72px 0 40px;display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--hl);color:var(--accent);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:600}
+h1{font-size:clamp(34px,5.2vw,56px);line-height:1.12;margin:16px 0 14px;letter-spacing:-.01em}
+.lead{font-size:clamp(17px,2vw,19px);color:var(--muted);margin:0 0 28px;max-width:560px}
+.cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:14px;padding:15px 22px;font:inherit;font-weight:600;font-size:17px;text-decoration:none;cursor:pointer;border:1px solid transparent;transition:background .15s,transform .15s}
+.btn.primary{background:var(--primary);color:var(--on-primary)}
+.btn.primary:hover{background:var(--primary-hover);transform:translateY(-1px)}
+.btn.ghost{background:var(--surface);border-color:var(--border);color:var(--text)}
+.btn.ghost:hover{border-color:var(--text)}
+.btn .sub{font-weight:400;font-size:13px;opacity:.75}
+.btn-col{display:flex;flex-direction:column;align-items:flex-start;line-height:1.25}
+.meta{font-size:14px;color:var(--muted);margin-top:14px}
+.meta b{color:var(--text);font-weight:600}
+.shot{background:var(--surface);border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);padding:18px}
+.shot .row{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;background:var(--mist);margin-bottom:10px}
+.shot .row:last-child{margin-bottom:0}
+.dot{width:10px;height:10px;border-radius:50%;background:#E5484D;flex:none;box-shadow:0 0 0 4px color-mix(in srgb,#E5484D 22%,transparent)}
+.shot .t{font-weight:600;font-size:15px}
+.shot .s{font-size:13px;color:var(--muted)}
+.pill{margin-inline-start:auto;font-size:12px;border-radius:999px;padding:3px 9px;background:var(--hl);color:var(--accent);font-weight:600;white-space:nowrap}
+/* sections */
+section{padding:48px 0}
+h2{font-size:clamp(26px,3.4vw,34px);margin:0 0 8px;line-height:1.2}
+.sec-sub{color:var(--muted);margin:0 0 28px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;display:flex;flex-direction:column;gap:10px}
+.card.me{border-color:var(--accent);box-shadow:0 0 0 3px var(--hl)}
+.card h3{margin:0;font-size:20px;display:flex;align-items:center;gap:10px}
+.os-ic{width:40px;height:40px;border-radius:12px;background:var(--hl);color:var(--accent);display:grid;place-items:center;flex:none}
+.card p{margin:0;color:var(--muted);font-size:15px}
+.card .btn{font-size:15px;padding:12px 16px;border-radius:12px}
+.card .links{display:flex;flex-direction:column;gap:8px;margin-top:auto}
+.tag{font-size:12px;font-weight:600;color:var(--accent);background:var(--hl);border-radius:999px;padding:2px 8px;margin-inline-start:auto}
+.small{font-size:13px;color:var(--muted)}
+/* steps */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tabs button[aria-selected="true"]{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.steps{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px 22px}
+.steps ol{margin:0;padding:14px 0;padding-inline-start:22px}
+.steps li{margin:8px 0}
+.note{background:var(--warning-bg);color:var(--warning);border-radius:12px;padding:12px 14px;font-size:14px;margin:6px 0 16px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--mist);border:1px solid var(--border);border-radius:6px;padding:1px 6px;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+pre{direction:ltr;text-align:left;background:var(--mist);border:1px solid var(--border);border-radius:12px;padding:12px 14px;overflow-x:auto;font-size:13.5px;margin:8px 0}
+pre code{background:none;border:0;padding:0;white-space:pre}
+.feat{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.feat .card{gap:6px}
+.feat b{font-size:16px}
+details{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:10px}
+summary{cursor:pointer;font-weight:600}
+details p{color:var(--muted);margin:10px 0 0}
+footer{border-top:1px solid var(--border);padding:28px 0 40px;color:var(--muted);font-size:14px}
+footer .wrap{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+footer nav{margin-inline-start:auto;display:flex;gap:16px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:900px){.hero{grid-template-columns:1fr;padding-top:44px}.grid3{grid-template-columns:1fr}.feat{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.wrap{padding:0 16px}.feat{grid-template-columns:1fr}.hide-sm{display:none}.btn{width:100%}.cta .btn{width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#top"><img src="logo.jpg" alt=""><span>KEEK</span></a>
+    <nav>
+      <a class="chip hide-sm" href="#install" data-i="navInstall">التثبيت</a>
+      <a class="chip hide-sm" id="ghLink" href="#" target="_blank" rel="noopener">GitHub</a>
+      <button class="chip" id="langBtn" type="button">English</button>
+      <button class="chip" id="themeBtn" type="button" aria-label="Theme">◐</button>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div>
+      <span class="eyebrow" data-i="free">مجاني تماماً · بدون حساب</span>
+      <h1 data-i="h1">سجّل اجتماعاتك، واحصل على الملخص والمهام تلقائياً</h1>
+      <p class="lead" data-i="lead">كيكـ يلتقط صوت الاجتماع من Zoom وTeams وMeet وأي تطبيق آخر، يفرّغه بالعربية (واللهجة المصرية) والإنجليزية، ويكتب الملخص والقرارات والمهام — على جهازك.</p>
+      <div class="cta">
+        <a class="btn primary" id="mainBtn" href="#download">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+          <span class="btn-col"><span id="mainLabel" data-i="dlFor">تحميل</span><span class="sub" id="mainSub"></span></span>
+        </a>
+        <a class="btn ghost" href="#download" data-i="otherOs">أنظمة أخرى</a>
+      </div>
+      <p class="meta" id="relMeta"></p>
+    </div>
+    <div class="shot" aria-hidden="true">
+      <div class="row"><span class="dot"></span><div><div class="t" data-i="demo1">اجتماع مراجعة الإطلاق</div><div class="s" data-i="demo1s">يسجّل الآن · Zoom · ٢٤:١٢</div></div><span class="pill" data-i="live">تفريغ مباشر</span></div>
+      <div class="row"><div><div class="t" data-i="demo2">القرار: الإطلاق يوم ١ ديسمبر</div><div class="s" data-i="demo2s">[03:41] منى: موافقة، نطلق أول ديسمبر</div></div></div>
+      <div class="row"><div><div class="t" data-i="demo3">تجهيز حملة التسويق — منى</div><div class="s" data-i="demo3s">مهمة · قبل الأسبوع القادم</div></div><span class="pill">Linear</span></div>
+    </div>
+  </div>
+
+  <section id="download">
+    <div class="wrap">
+      <h2 data-i="dlTitle">حمّل كيكـ لسطح المكتب</h2>
+      <p class="sec-sub" data-i="dlSub">نفس التطبيق على كل الأنظمة. مجاني، وبياناتك تبقى على جهازك.</p>
+      <div class="grid3">
+        <div class="card" data-os="win">
+          <h3><span class="os-ic"><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.1H3zM11.5 4.3 21 3v8.5h-9.5zM3 12.5h7.5v7.1L3 18.5zM11.5 12.5H21V21l-9.5-1.3z"/></svg></span>Windows<span class="tag" data-i="yours" hidden>جهازك</span></h3>
+          <p data-i="winReq">Windows 10 و11 (64-bit).</p>
+          <div class="links">
+            <a class="btn primary" data-file="KEEK-Setup.exe"><span data-i="dlWin">تحميل لـ Windows</span></a>
+            <span class="small" data-size="KEEK-Setup.exe"></span>
+          </div>
+        </div>
+        <div class="card" data-os="mac">
+          <h3><span class="os-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>macOS<span class="tag" data-i="yours" hidden>جهازك</span></h3>
+          <p data-i="macReq">macOS 12 أو أحدث — Apple Silicon وIntel.</p>
+          <div class="links">
+            <a class="btn primary" data-file="KEEK-mac.dmg"><span data-i="dlMac">تحميل لـ macOS</span></a>
+            <span class="small" data-size="KEEK-mac.dmg"></span>
+          </div>
+        </div>
+        <div class="card" data-os="linux">
+          <h3><span class="os-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M12 15h5"/></svg></span>Linux<span class="tag" data-i="yours" hidden>جهازك</span></h3>
+          <p data-i="linReq">Ubuntu وDebian وFedora وغيرها (x64).</p>
+          <div class="links">
+            <a class="btn primary" data-file="KEEK-linux.AppImage"><span data-i="dlAppImage">تحميل AppImage</span></a>
+            <a class="btn ghost" data-file="KEEK-linux.deb"><span data-i="dlDeb">تحميل ‎.deb (Ubuntu/Debian)</span></a>
+            <span class="small" data-size="KEEK-linux.AppImage"></span>
+          </div>
+        </div>
+      </div>
+      <p class="small" style="margin-top:16px" data-i="allRel">كل الإصدارات والملاحظات على <a id="relLink" href="#" target="_blank" rel="noopener">صفحة الإصدارات</a>.</p>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <h2 data-i="instTitle">التثبيت خطوة بخطوة</h2>
+      <p class="sec-sub" data-i="instSub">التطبيق جديد وغير موقّع بشهادة مدفوعة بعد، لذلك قد يعرض النظام تحذيراً في أول مرة. هذا طبيعي.</p>
+      <div class="tabs" role="tablist">
+        <button class="chip" role="tab" data-tab="win">Windows</button>
+        <button class="chip" role="tab" data-tab="mac">macOS</button>
+        <button class="chip" role="tab" data-tab="linux">Linux</button>
+      </div>
+      <div class="steps" data-panel="win">
+        <ol>
+          <li data-i="w1">افتح الملف <code>KEEK-Setup.exe</code> بعد التحميل.</li>
+          <li data-i="w2">إذا ظهرت رسالة "Windows protected your PC" اضغط <b>More info</b> ثم <b>Run anyway</b>.</li>
+          <li data-i="w3">اختر مكان التثبيت ثم <b>Install</b>. يظهر كيكـ في قائمة ابدأ وعلى سطح المكتب.</li>
+          <li data-i="w4">عند أول تسجيل اسمح بالوصول للميكروفون. صوت النظام يُلتقط تلقائياً.</li>
+        </ol>
+      </div>
+      <div class="steps" data-panel="mac" hidden>
+        <ol>
+          <li data-i="m1">افتح <code>KEEK-mac.dmg</code> واسحب KEEK إلى مجلد <b>Applications</b>.</li>
+          <li data-i="m2">افتح KEEK من Applications. إذا ظهرت رسالة أن المطوّر غير معروف: افتح <b>System Settings ← Privacy &amp; Security</b> واضغط <b>Open Anyway</b>.</li>
+          <li data-i="m3">إذا ظهرت رسالة أن التطبيق "تالف" (damaged)، افتح Terminal ونفّذ:</li>
+        </ol>
+        <pre><code>xattr -cr /Applications/KEEK.app</code></pre>
+        <ol start="4">
+          <li data-i="m4">اسمح بـ <b>Microphone</b> و<b>Screen &amp; System Audio Recording</b> عند الطلب — الأخير مطلوب لالتقاط صوت الاجتماع.</li>
+        </ol>
+      </div>
+      <div class="steps" data-panel="linux" hidden>
+        <p class="small" style="margin:14px 0 0" data-i="l0">AppImage (أي توزيعة):</p>
+        <pre><code>chmod +x KEEK-linux.AppImage
+./KEEK-linux.AppImage</code></pre>
+        <p class="small" style="margin:6px 0 0" data-i="l1">Ubuntu / Debian:</p>
+        <pre><code>sudo apt install ./KEEK-linux.deb</code></pre>
+        <p class="small" style="margin:6px 0 14px" data-i="l2">إذا لم يفتح AppImage على Ubuntu 22.04+ ثبّت <code>libfuse2</code>. لالتقاط صوت النظام اختر جهاز "Monitor of …" من شاشة التسجيل.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2 data-i="keyTitle">خطوة أخيرة: مفتاح ذكاء اصطناعي مجاني</h2>
+      <p class="sec-sub" data-i="keySub">كيكـ يستخدم الطبقات المجانية من Groq وGoogle Gemini. تحتاج مفتاحاً واحداً على الأقل (دقيقتان، بدون بطاقة).</p>
+      <div class="grid3">
+        <div class="card"><h3 data-i="k1t">1. أنشئ مفتاحاً</h3><p data-i="k1">من <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a> أو <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>.</p></div>
+        <div class="card"><h3 data-i="k2t">2. الصقه في كيكـ</h3><p data-i="k2">الإعدادات ← الذكاء الاصطناعي ← الصق المفتاح ← حفظ. يُحفظ مشفّراً على جهازك.</p></div>
+        <div class="card"><h3 data-i="k3t">3. سجّل اجتماعك الأول</h3><p data-i="k3">اضغط "تسجيل سريع" وابدأ الاجتماع كالمعتاد. الملخص والمهام تظهر بعد الإيقاف.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2 data-i="featTitle">ماذا يفعل كيكـ؟</h2>
+      <p class="sec-sub" data-i="featSub">بدون بوت ينضم للاجتماع، وبدون اشتراك.</p>
+      <div class="feat">
+        <div class="card"><b data-i="f1t">أي تطبيق اجتماعات</b><p data-i="f1">يلتقط صوت النظام والميكروفون: Zoom وTeams وMeet وWhatsApp وغيرها.</p></div>
+        <div class="card"><b data-i="f2t">عربي وإنجليزي</b><p data-i="f2">تفريغ مباشر بالعربية واللهجة المصرية والإنجليزية والكلام المختلط.</p></div>
+        <div class="card"><b data-i="f3t">ملخص وقرارات ومهام</b><p data-i="f3">كل نقطة مربوطة بتوقيتها في النص، مع بحث ذكي عبر كل اجتماعاتك.</p></div>
+        <div class="card"><b data-i="f4t">يتصل بأدواتك</b><p data-i="f4">Google Calendar وOutlook وZoom وSlack وNotion وLinear وJira وWebhooks.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="extension">
+    <div class="wrap">
+      <div class="card" style="flex-direction:row;flex-wrap:wrap;align-items:center;gap:18px">
+        <span class="os-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5h8.2M9 13.8 4.9 6.7M15 13.8l-4.1 7.1"/></svg></span>
+        <div style="flex:1;min-width:220px"><h3 style="margin:0 0 4px" data-i="extTitle">إضافة Chrome (اختيارية)</h3>
+          <p data-i="extBody">تكتشف اجتماعات Meet وZoom وTeams على الويب وتسجّل صوت التبويب، أو تتحكم في تطبيق سطح المكتب. فك الضغط ثم chrome://extensions ← Developer mode ← Load unpacked.</p></div>
+        <a class="btn ghost" data-file="KEEK-extension.zip"><span data-i="dlExt">تحميل الإضافة (.zip)</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <h2 data-i="faqTitle">أسئلة شائعة</h2>
+      <details><summary data-i="q1">هل كيكـ مجاني فعلاً؟</summary><p data-i="a1">نعم. التطبيق مجاني ويعمل بمفاتيحك المجانية من Groq أو Gemini. لا يوجد حساب أو اشتراك.</p></details>
+      <details><summary data-i="q2">أين تُحفظ بياناتي؟</summary><p data-i="a2">على جهازك فقط. يُرسل النص أو الصوت الذي تعالجه إلى مزود الذكاء الاصطناعي الذي تختاره (Groq أو Gemini) وفق شروطه.</p></details>
+      <details><summary data-i="q3">لماذا يظهر تحذير أمني عند التثبيت؟</summary><p data-i="a3">لأن التطبيق غير موقّع بشهادة Microsoft أو Apple المدفوعة بعد. الكود مفتوح على GitHub ويُبنى تلقائياً من المصدر.</p></details>
+      <details><summary data-i="q4">هل يعمل بدون إنترنت؟</summary><p data-i="a4">التسجيل والتعديل والبحث بالكلمات تعمل بدون إنترنت. التفريغ والتحليل يحتاجان اتصالاً بمزود الذكاء الاصطناعي.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="yr"></span> KEEK</span>
+    <nav><a id="ghLink2" href="#" target="_blank" rel="noopener">GitHub</a><a id="docsLink" href="#" target="_blank" rel="noopener" data-i="docs">الدليل</a></nav>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  // Repo is taken from the GitHub Pages URL (<owner>.github.io/<repo>/); override with ?repo=owner/name.
+  var FALLBACK = 'MohandMahmoud/keek-suite';
+  var qs = new URLSearchParams(location.search);
+  var repo = qs.get('repo') || (function () {
+    var m = location.hostname.match(/^([^.]+)\.github\.io$/), seg = location.pathname.split('/').filter(Boolean)[0];
+    return m && seg ? m[1] + '/' + seg : FALLBACK;
+  })();
+  var GH = 'https://github.com/' + repo;
+  var dl = function (f) { return GH + '/releases/latest/download/' + f; };
+
+  var EN = {
+    navInstall: 'Install', free: 'Completely free · no account', h1: 'Record your meetings. Get the summary and action items automatically.',
+    lead: 'KEEK captures meeting audio from Zoom, Teams, Meet or any other app, transcribes Arabic (including Egyptian dialect) and English, and writes the summary, decisions and action items — on your computer.',
+    dlFor: 'Download', otherOs: 'Other systems',
+    demo1: 'Launch review meeting', demo1s: 'Recording · Zoom · 24:12', live: 'Live transcript',
+    demo2: 'Decision: launch on December 1', demo2s: '[03:41] Mona: Agreed, we launch on the 1st', demo3: 'Prepare the marketing campaign — Mona', demo3s: 'Action item · before next week',
+    dlTitle: 'Download KEEK for desktop', dlSub: 'The same app on every system. Free, and your data stays on your computer.', yours: 'Your system',
+    winReq: 'Windows 10 and 11 (64-bit).', macReq: 'macOS 12 or later — Apple Silicon and Intel.', linReq: 'Ubuntu, Debian, Fedora and others (x64).',
+    dlWin: 'Download for Windows', dlMac: 'Download for macOS', dlAppImage: 'Download AppImage', dlDeb: 'Download .deb (Ubuntu/Debian)',
+    allRel: 'All versions and release notes are on the <a id="relLink" href="#" target="_blank" rel="noopener">releases page</a>.',
+    instTitle: 'Install, step by step', instSub: 'KEEK is new and not yet signed with a paid certificate, so your system may show a warning the first time. That’s expected.',
+    w1: 'Open <code>KEEK-Setup.exe</code> once it has downloaded.', w2: 'If you see “Windows protected your PC”, click <b>More info</b>, then <b>Run anyway</b>.',
+    w3: 'Choose where to install, then <b>Install</b>. KEEK appears in the Start menu and on the desktop.', w4: 'Allow microphone access on your first recording. Computer audio is captured automatically.',
+    m1: 'Open <code>KEEK-mac.dmg</code> and drag KEEK into <b>Applications</b>.', m2: 'Open KEEK from Applications. If macOS says the developer can’t be verified: open <b>System Settings → Privacy &amp; Security</b> and click <b>Open Anyway</b>.',
+    m3: 'If macOS says the app is “damaged”, open Terminal and run:', m4: 'Allow <b>Microphone</b> and <b>Screen &amp; System Audio Recording</b> when asked — the second one is needed to capture meeting audio.',
+    l0: 'AppImage (any distribution):', l1: 'Ubuntu / Debian:', l2: 'If the AppImage won’t start on Ubuntu 22.04+, install <code>libfuse2</code>. To capture computer audio, pick a “Monitor of …” device on the recording screen.',
+    keyTitle: 'Last step: a free AI key', keySub: 'KEEK uses the free tiers of Groq and Google Gemini. You need at least one key (two minutes, no card).',
+    k1t: '1. Create a key', k1: 'At <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a> or <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>.',
+    k2t: '2. Paste it into KEEK', k2: 'Settings → AI → paste the key → Save. It’s stored encrypted on your computer.',
+    k3t: '3. Record your first meeting', k3: 'Click “Quick record” and run your meeting as usual. The summary and action items appear when you stop.',
+    featTitle: 'What KEEK does', featSub: 'No bot joins your meeting, and no subscription.',
+    f1t: 'Any meeting app', f1: 'Captures computer audio and your microphone: Zoom, Teams, Meet, WhatsApp and more.',
+    f2t: 'Arabic and English', f2: 'Live transcription in Arabic, Egyptian dialect, English and mixed speech.',
+    f3t: 'Summary, decisions, action items', f3: 'Every point links to its moment in the transcript, with AI search across all your meetings.',
+    f4t: 'Connects to your tools', f4: 'Google Calendar, Outlook, Zoom, Slack, Notion, Linear, Jira and webhooks.',
+    extTitle: 'Chrome extension (optional)', extBody: 'Detects Meet, Zoom and Teams on the web and records the tab’s audio, or controls the desktop app. Unzip, then chrome://extensions → Developer mode → Load unpacked.',
+    dlExt: 'Download the extension (.zip)',
+    faqTitle: 'Questions', q1: 'Is KEEK really free?', a1: 'Yes. The app is free and runs on your own free Groq or Gemini key. There’s no account and no subscription.',
+    q2: 'Where is my data stored?', a2: 'On your computer only. The text or audio you process is sent to the AI provider you choose (Groq or Gemini) under their terms.',
+    q3: 'Why do I see a security warning when installing?', a3: 'Because the app isn’t signed with a paid Microsoft or Apple certificate yet. The code is open on GitHub and built automatically from source.',
+    q4: 'Does it work offline?', a4: 'Recording, editing and keyword search work offline. Transcription and analysis need a connection to the AI provider.',
+    docs: 'Docs', version: 'Version', released: 'released', soon: 'The first release is being built — check back in a few minutes.', forOs: 'for ', mobile: 'Open this page on your computer to install KEEK.'
+  };
+  var AR = {}; // filled from the page's Arabic text
+  document.querySelectorAll('[data-i]').forEach(function (el) { AR[el.dataset.i] = el.innerHTML; });
+  Object.assign(AR, { version: 'الإصدار', released: 'صدر', soon: 'يجري بناء أول إصدار الآن — عد بعد دقائق.', forOs: 'لـ ', mobile: 'افتح هذه الصفحة على جهاز الكمبيوتر لتثبيت كيكـ.' });
+
+  var lang = (function () { try { return localStorage.getItem('keek-lang'); } catch (e) { return null; } })() || ((navigator.language || '').toLowerCase().indexOf('ar') === 0 ? 'ar' : 'en');
+  var S = function () { return lang === 'ar' ? AR : EN; };
+
+  // ---- OS detection ----
+  var ua = navigator.userAgent || '', plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+  var mobile = /Android|iPhone|iPad|iPod/i.test(ua) || (navigator.userAgentData && navigator.userAgentData.mobile);
+  var os = /Win/i.test(plat) || /Windows/i.test(ua) ? 'win' : /Mac/i.test(plat) || /Mac OS X/i.test(ua) ? 'mac' : /Linux|X11|CrOS/i.test(plat + ua) ? 'linux' : 'win';
+  var MAIN = { win: ['KEEK-Setup.exe', 'Windows'], mac: ['KEEK-mac.dmg', 'macOS'], linux: ['KEEK-linux.AppImage', 'Linux'] };
+  var assets = {}, rel = null, relState = 'loading';
+
+  function fmtSize(b) { return b ? (b / 1048576).toFixed(0) + ' MB' : ''; }
+  function fmtDate(iso) { try { return new Date(iso).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }); } catch (e) { return ''; } }
+
+  function render() {
+    var s = S();
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.querySelectorAll('[data-i]').forEach(function (el) { if (s[el.dataset.i] != null) el.innerHTML = s[el.dataset.i]; });
+    document.getElementById('langBtn').textContent = lang === 'ar' ? 'English' : 'العربية';
+    document.title = lang === 'ar' ? 'كيكـ — تحميل مجاني' : 'KEEK — Free download';
+
+    var none = relState === 'none';
+    document.querySelectorAll('[data-file]').forEach(function (a) {
+      a.href = none ? GH + '/releases' : dl(a.dataset.file);
+      if (!none) a.setAttribute('download', ''); else a.removeAttribute('download');
+    });
+    document.querySelectorAll('[data-size]').forEach(function (el) {
+      var a = assets[el.dataset.size];
+      el.textContent = a ? fmtSize(a.size) : '';
+    });
+    document.querySelectorAll('.card[data-os]').forEach(function (c) {
+      var me = c.dataset.os === os && !mobile;
+      c.classList.toggle('me', me);
+      c.querySelector('.tag').hidden = !me;
+    });
+    var m = MAIN[os], main = document.getElementById('mainBtn');
+    if (mobile) {
+      main.href = '#download';
+      document.getElementById('mainLabel').textContent = s.dlFor;
+      document.getElementById('mainSub').textContent = '';
+    } else {
+      main.href = none ? GH + '/releases' : dl(m[0]);
+      document.getElementById('mainLabel').textContent = s.dlFor + ' ' + s.forOs + m[1];
+      var a = assets[m[0]];
+      document.getElementById('mainSub').textContent = (rel ? rel.tag_name : '') + (a ? ' · ' + fmtSize(a.size) : '');
+    }
+    var meta = document.getElementById('relMeta');
+    meta.innerHTML = mobile ? s.mobile : none ? s.soon : rel ? s.version + ' <b dir="ltr">' + rel.tag_name + '</b> · ' + s.released + ' ' + fmtDate(rel.published_at) : '';
+    ['relLink'].forEach(function (id) { var e = document.getElementById(id); if (e) e.href = GH + '/releases'; });
+    document.getElementById('ghLink').href = GH;
+    document.getElementById('ghLink2').href = GH;
+    document.getElementById('docsLink').href = GH + '#readme';
+    document.getElementById('yr').textContent = new Date().getFullYear();
+    selectTab(currentTab);
+  }
+
+  // ---- install tabs ----
+  var currentTab = mobile ? 'win' : os;
+  function selectTab(k) {
+    currentTab = k;
+    document.querySelectorAll('[data-tab]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === k)); });
+    document.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== k; });
+  }
+  document.querySelectorAll('[data-tab]').forEach(function (b) { b.addEventListener('click', function () { selectTab(b.dataset.tab); }); });
+  // Clicking a download switches the steps to that system.
+  document.querySelectorAll('.card[data-os] [data-file]').forEach(function (a) {
+    a.addEventListener('click', function () { selectTab(a.closest('.card').dataset.os); setTimeout(function () { document.getElementById('install').scrollIntoView({ behavior: 'smooth' }); }, 400); });
+  });
+  document.getElementById('mainBtn').addEventListener('click', function () { if (!mobile) setTimeout(function () { document.getElementById('install').scrollIntoView({ behavior: 'smooth' }); }, 400); });
+
+  document.getElementById('langBtn').addEventListener('click', function () {
+    lang = lang === 'ar' ? 'en' : 'ar';
+    try { localStorage.setItem('keek-lang', lang); } catch (e) { /* private mode */ }
+    render();
+  });
+  document.getElementById('themeBtn').addEventListener('click', function () {
+    var root = document.documentElement, dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('keek-theme', root.dataset.theme); } catch (e) { /* ignore */ }
+  });
+  try { var th = localStorage.getItem('keek-theme'); if (th) document.documentElement.dataset.theme = th; } catch (e) { /* ignore */ }
+
+  render();
+  fetch('https://api.github.com/repos/' + repo + '/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (r) { if (r.status === 404) { relState = 'none'; return null; } return r.ok ? r.json() : null; })
+    .then(function (j) {
+      if (j && j.tag_name) { rel = j; relState = 'ok'; (j.assets || []).forEach(function (a) { assets[a.name] = a; }); }
+      render();
+    })
+    .catch(function () { render(); });
+})();
+</script>
+</body>
+</html>

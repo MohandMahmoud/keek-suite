@@ -13,28 +13,37 @@
   const PL = () => window.KEEK_PLATFORM || {};
   const XI = X.int = { state: {}, loaded: false, open: null, form: {}, choices: {}, busy: {}, err: {}, result: {} };
 
-  const BUILT = ['slack', 'notion', 'linear', 'jira', 'webhooks'];
-  const PLANNED = [['gcal', 'cal', 'v1.1'], ['outlook', 'cal', 'v1.2'], ['zoom', 'monitor', 'v1.2']];
-  const ICON = { slack: 'plug', notion: 'file', linear: 'tasks', jira: 'tasks', webhooks: 'plug' };
+  const BUILT = ['gcal', 'outlook', 'zoom', 'slack', 'notion', 'linear', 'jira', 'webhooks'];
+  const SENDERS = ['slack', 'notion', 'linear', 'jira', 'webhooks'];
+  const SOURCES = ['gcal', 'outlook', 'zoom'];
+  const ICON = { slack: 'plug', notion: 'file', linear: 'tasks', jira: 'tasks', webhooks: 'plug', gcal: 'cal', outlook: 'cal', zoom: 'monitor' };
   const ISSUES = { linear: true, jira: true };
   const FIELDS = {
     slack: [['url', 'url']],
     webhooks: [['url', 'url'], ['secret', 'secret']],
     notion: [['token', 'secret'], ['page', 'text']],
     linear: [['apiKey', 'secret'], ['teamId', 'choice']],
-    jira: [['site', 'text'], ['email', 'email'], ['apiToken', 'secret'], ['projectKey', 'choice']]
+    jira: [['site', 'text'], ['email', 'email'], ['apiToken', 'secret'], ['projectKey', 'choice']],
+    gcal: [['url', 'secret']],
+    outlook: [['url', 'secret']],
+    zoom: [['accountId', 'text'], ['clientId', 'text'], ['clientSecret', 'secret'], ['user', 'email']]
   };
-  const SECRETF = { slack: ['url'], webhooks: ['secret'], notion: ['token'], linear: ['apiKey'], jira: ['apiToken'] };
+  const SECRETF = { slack: ['url'], webhooks: ['secret'], notion: ['token'], linear: ['apiKey'], jira: ['apiToken'], gcal: ['url'], outlook: ['url'], zoom: ['clientSecret'] };
   const PH = {
     'slack.url': 'https://hooks.slack.com/services/…', 'webhooks.url': 'https://example.com/keek-hook',
     'notion.token': 'ntn_…', 'notion.page': 'https://www.notion.so/…', 'linear.apiKey': 'lin_api_…',
-    'jira.site': 'yourteam.atlassian.net', 'jira.email': 'name@company.com', 'jira.apiToken': 'ATATT…', 'jira.projectKey': 'ENG'
+    'jira.site': 'yourteam.atlassian.net', 'jira.email': 'name@company.com', 'jira.apiToken': 'ATATT…', 'jira.projectKey': 'ENG',
+    'gcal.url': 'https://calendar.google.com/calendar/ical/…/private-…/basic.ics', 'outlook.url': 'https://outlook.office365.com/owa/calendar/…/calendar.ics',
+    'zoom.user': 'name@company.com'
   };
   const HELP = {
     slack: 'https://api.slack.com/messaging/webhooks',
     notion: 'https://www.notion.so/profile/integrations',
     linear: 'https://linear.app/settings/account/security',
-    jira: 'https://id.atlassian.com/manage-profile/security/api-tokens'
+    jira: 'https://id.atlassian.com/manage-profile/security/api-tokens',
+    gcal: 'https://support.google.com/calendar/answer/37648',
+    outlook: 'https://outlook.office.com/calendar/options/calendar/SharedCalendars',
+    zoom: 'https://marketplace.zoom.us/develop/create'
   };
 
   const STR = {
@@ -59,7 +68,17 @@
       send_slack: 'نشر الملخص والقرارات والمهام في قناة Slack.', send_notion: 'إنشاء صفحة Notion بالملخص الكامل.', send_webhooks: 'إرسال بيانات الاجتماع كاملة إلى رابطك.',
       send_issues: 'إنشاء {n} مهمة في {s} من المهام المفتوحة.', allSent: 'كل المهام المفتوحة أُرسلت من قبل.', needReport: 'عالج الاجتماع أولاً.',
       sendBtn: 'إرسال', sending: 'جارٍ الإرسال…', sentOk: 'تم الإرسال إلى {s}', sendFailed: '{s}: {e}', sentBefore: 'أُرسل سابقاً {d}', autoSent: 'أُرسل "{t}" إلى {s}',
-      kxVia: 'أُرسل من كيكـ', kxFrom: 'من اجتماع'
+      kxVia: 'أُرسل من كيكـ', kxFrom: 'من اجتماع',
+      upcomingOff: 'اربط Google Calendar أو Outlook أو Zoom من التكاملات لعرض اجتماعاتك القادمة هنا.',
+      in_gcal_p: 'قراءة الأحداث من رابط iCal السري (قراءة فقط).', in_outlook_d: 'عرض الاجتماعات القادمة من تقويم Outlook وربطها بالتسجيلات.', in_outlook_p: 'قراءة الأحداث من رابط ICS المنشور (قراءة فقط).',
+      in_zoom_d: 'عرض اجتماعات Zoom القادمة واستيراد نصوص التسجيلات السحابية.', in_zoom_p: 'قراءة الاجتماعات القادمة ونصوص التسجيلات السحابية (بدون الصوت المباشر).',
+      f_url_gcal: 'العنوان السري بصيغة iCal', f_url_outlook: 'رابط ICS', f_accountId: 'Account ID', f_clientId: 'Client ID', f_clientSecret: 'Client Secret', f_user: 'بريد مستخدم Zoom',
+      h_gcal: 'في Google Calendar: الإعدادات ← اختر التقويم ← دمج التقويم ← "العنوان السري بتنسيق iCal" ← انسخه. لا تشاركه مع أحد.',
+      h_outlook: 'في Outlook على الويب: الإعدادات ← التقويم ← التقويمات المشتركة ← نشر تقويم ← "يمكن عرض جميع التفاصيل" ← انسخ رابط ICS.',
+      h_zoom: 'في Zoom App Marketplace: Develop ← Build App ← Server-to-Server OAuth. أضف الصلاحيات user:read:user:admin وmeeting:read:list_meetings:admin وcloud_recording:read:list_user_recordings:admin وcloud_recording:read:list_recording_files:admin، ثم فعّل التطبيق وانسخ Account ID وClient ID وClient Secret. يتطلب صلاحية مالك أو مسؤول الحساب.',
+      i_calendar: 'التقويم', i_upcoming: '{n} اجتماع خلال أسبوعين', i_user: 'المستخدم',
+      kxJoin: 'انضمام', kxRecord: 'تسجيل', kxNow: 'الآن', kxAllDay: 'طوال اليوم', kxNoEvents: 'لا توجد اجتماعات خلال الأسبوعين القادمين.', kxLoading: 'جارٍ التحميل…', kxRefresh: 'تحديث',
+      kxZoomRecs: 'استيراد التسجيلات', kxZoomTitle: 'تسجيلات Zoom السحابية (آخر ٣٠ يوماً)', kxZoomNone: 'لا توجد تسجيلات سحابية في آخر ٣٠ يوماً.', kxImport: 'استيراد', kxNoTranscript: 'بدون نص', kxMin: '{n} دقيقة'
     },
     en: {
       integrationsSub: 'Connect KEEK to the tools you work in. Slack, Notion, Linear, Jira and webhooks connect with a URL or token; calendars and Zoom are on the roadmap.',
@@ -82,7 +101,17 @@
       send_slack: 'Post the summary, decisions and action items to your Slack channel.', send_notion: 'Create a Notion page with the full summary.', send_webhooks: 'Send the full meeting data to your URL.',
       send_issues: 'Create {n} issue(s) in {s} from open action items.', allSent: 'All open action items were already sent.', needReport: 'Process the meeting first.',
       sendBtn: 'Send', sending: 'Sending…', sentOk: 'Sent to {s}', sendFailed: '{s}: {e}', sentBefore: 'Sent before {d}', autoSent: 'Sent “{t}” to {s}',
-      kxVia: 'Sent from KEEK', kxFrom: 'From meeting'
+      kxVia: 'Sent from KEEK', kxFrom: 'From meeting',
+      upcomingOff: 'Connect Google Calendar, Outlook or Zoom in Integrations to see your upcoming meetings here.',
+      in_gcal_p: 'Read events from your secret iCal link (read-only).', in_outlook_d: 'Show upcoming meetings from your Outlook calendar and link them to recordings.', in_outlook_p: 'Read events from your published ICS link (read-only).',
+      in_zoom_d: 'Show upcoming Zoom meetings and import cloud-recording transcripts.', in_zoom_p: 'Read upcoming meetings and cloud-recording transcripts (no live audio).',
+      f_url_gcal: 'Secret address in iCal format', f_url_outlook: 'ICS link', f_accountId: 'Account ID', f_clientId: 'Client ID', f_clientSecret: 'Client Secret', f_user: 'Zoom user email',
+      h_gcal: 'In Google Calendar: Settings → pick the calendar → Integrate calendar → “Secret address in iCal format” → copy. Keep it private.',
+      h_outlook: 'In Outlook on the web: Settings → Calendar → Shared calendars → Publish a calendar → “Can view all details” → copy the ICS link.',
+      h_zoom: 'In the Zoom App Marketplace: Develop → Build App → Server-to-Server OAuth. Add the scopes user:read:user:admin, meeting:read:list_meetings:admin, cloud_recording:read:list_user_recordings:admin and cloud_recording:read:list_recording_files:admin, activate the app, then copy Account ID, Client ID and Client Secret. Needs an account owner or admin.',
+      i_calendar: 'Calendar', i_upcoming: '{n} meetings in the next two weeks', i_user: 'User',
+      kxJoin: 'Join', kxRecord: 'Record', kxNow: 'Now', kxAllDay: 'All day', kxNoEvents: 'No meetings in the next two weeks.', kxLoading: 'Loading…', kxRefresh: 'Refresh',
+      kxZoomRecs: 'Import recordings', kxZoomTitle: 'Zoom cloud recordings (last 30 days)', kxZoomNone: 'No cloud recordings in the last 30 days.', kxImport: 'Import', kxNoTranscript: 'No transcript', kxMin: '{n} min'
     }
   };
 
@@ -100,7 +129,7 @@
     if (!a) { XI.loaded = true; return; }
     try { XI.state = (await a.list()) || {}; } catch (e) { console.warn('integrations', e); }
     XI.loaded = true;
-    if (UI.route === 'integrations' || (UI.modal && UI.modal.type === 'share')) render();
+    if (UI.route === 'integrations' || UI.route === 'dashboard' || (UI.modal && UI.modal.type === 'share')) render();
   };
   const on = k => !!(XI.state[k] && XI.state[k].connected);
 
@@ -168,6 +197,8 @@
     if (k === 'webhooks') { if (i.target) bits.push(t('i_target') + ': <span dir="ltr">' + esc(i.target) + '</span>'); if (i.signed) bits.push(t('i_signed') + ' ✓'); }
     if (k === 'notion') bits.push(t('i_page') + ': ' + esc(i.pageTitle || '') + (i.workspace ? ' — ' + esc(i.workspace) : ''));
     if (k === 'linear') bits.push(t('i_team') + ': ' + esc(i.team || ''));
+    if (k === 'gcal' || k === 'outlook') { bits.push(t('i_calendar') + ': ' + esc(i.calendar || '')); if (i.upcoming != null) bits.push(t('i_upcoming', { n: fmtNum(i.upcoming) })); }
+    if (k === 'zoom') bits.push(t('i_user') + ': ' + esc(i.user || '') + (i.email ? ' <span dir="ltr">(' + esc(i.email) + ')</span>' : ''));
     if (k === 'jira') { bits.push(t('i_site') + ': <span dir="ltr">' + esc(i.site || '') + '</span>'); bits.push(t('i_project') + ': ' + esc(i.project || '')); if (i.issueType) bits.push(t('i_type') + ': ' + esc(i.issueType)); }
     return bits.join(' · ');
   }
@@ -199,7 +230,7 @@
     else if (st.connected) {
       body = `<p class="perm">${infoLine(k, info)}</p>
         ${'auto' in info ? `<label class="consent"><input type="checkbox" data-kxi-auto="${k}" ${info.auto ? 'checked' : ''}><span class="small">${t('intAuto')}</span></label>` : ''}
-        <div class="chips"><button class="btn sm" data-act="kxIntEdit" data-k="${k}">${ic('gear')}${t('kxEdit')}</button>
+        <div class="chips">${k === 'zoom' ? `<button class="btn sm primary" data-act="kxZoomRecs">${ic('download')}${t('kxZoomRecs')}</button>` : ''}<button class="btn sm" data-act="kxIntEdit" data-k="${k}">${ic('gear')}${t('kxEdit')}</button>
         <button class="btn sm ghost" data-act="kxIntCheck" data-k="${k}" ${busy ? 'disabled' : ''}>${busy ? t('checking') : t('kxCheck')}</button>
         <button class="btn sm ghost" data-act="kxIntRemove" data-k="${k}">${t('kxDisconnect')}</button></div>`;
     } else body = `<p class="perm"><b>${t('permissions')}:</b> ${t('in_' + k + '_p')}</p><div><button class="btn sm" data-act="kxIntEdit" data-k="${k}">${t('connect')}</button></div>`;
@@ -207,15 +238,13 @@
     return `<div class="card"><h3><span class="person">${ic(ICON[k])}${name(k)}</span>${badge}</h3><p class="small">${t('in_' + k + '_d')}</p>${body}${err}</div>`;
   }
 
-  const planned = ([k, i, v]) => `<div class="card"><h3><span class="person">${ic(i)}${t('in_' + k)}</span><span class="badge">${t('plannedFor', { v })}</span></h3><p class="small">${t('in_' + k + '_d')}</p><p class="perm"><b>${t('permissions')}:</b> ${t('in_' + k + '_p')}</p><button class="btn sm" disabled>${t('connect')}</button></div>`;
-
   function integrationsView() {
     if (!XI.loaded && !XI.loading) { XI.loading = true; XI.load().finally(() => { XI.loading = false; }); }
     return `<div class="page-head"><div><h1>${t('nav_integrations')}</h1><p>${t('integrationsSub')}</p></div></div>
       <h3 class="day">${t('keekApps')}</h3>${X.appCards()}
       <h3 class="day">${t('directory')}</h3>
       ${X.kind === 'web' ? `<p class="note" style="margin-bottom:14px">${t('intWebOnly')}</p>` : ''}
-      <div class="cards">${BUILT.map(card).join('')}${PLANNED.map(planned).join('')}</div>
+      <div class="cards">${BUILT.map(card).join('')}</div>
       <p class="note" style="margin-top:20px">${t('integrationsNote')}</p>`;
   }
 
@@ -224,7 +253,7 @@
     const m = M(md_.mid);
     if (!m) return '';
     if (!XI.loaded && !XI.loading) { XI.loading = true; XI.load().finally(() => { XI.loading = false; }); }
-    const conn = BUILT.filter(on);
+    const conn = SENDERS.filter(on);
     let body;
     if (!conn.length) {
       body = `<div class="setup">${ic('share')}<div>${t('sendNone')}<div style="margin-top:8px"><button class="btn sm" data-act="kxIntGo">${t('goIntegrations')}</button></div></div></div>`;
@@ -255,6 +284,60 @@
     return `<div class="scrim" data-act="modalScrim"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-head"><h3>${esc(title)}</h3><button class="btn sm ghost" data-act="modalClose" aria-label="${esc(t('close'))}">${ic('x')}</button></div><div class="modal-body">${body}</div><div class="modal-foot">${foot}</div></div></div>`;
   }
 
+  const modalBox = (title, body, foot) => `<div class="scrim" data-act="modalScrim"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-head"><h3>${esc(title)}</h3><button class="btn sm ghost" data-act="modalClose" aria-label="${esc(t('close'))}">${ic('x')}</button></div><div class="modal-body">${body}</div>${foot ? `<div class="modal-foot">${foot}</div>` : ''}</div></div>`;
+
+  /* ---------------- upcoming meetings (calendars + Zoom) ---------------- */
+  XI.ev = { list: [], at: 0, loading: false, errors: {} };
+  XI.loadEvents = async function (force) {
+    const a = api(), srcs = SOURCES.filter(on);
+    if (!a || !srcs.length || XI.ev.loading) return;
+    if (!force && Date.now() - XI.ev.at < 5 * 60000) return;
+    XI.ev.loading = true;
+    const errors = {}, all = [];
+    await Promise.all(srcs.map(k => a.run(k, 'events', { days: 14 }).then(list => { (list || []).forEach(e => all.push(Object.assign({ from: k }, e))); }).catch(e => { errors[k] = (e && e.message) || String(e); })));
+    // the same Zoom meeting is often in the calendar too: keep one per start time + link/title
+    const seen = new Set(), out = [];
+    all.sort((x, y) => x.start.localeCompare(y.start) || (x.from === 'zoom') - (y.from === 'zoom')).forEach(e => {
+      const key = e.start.slice(0, 16) + '|' + (e.url ? e.url.replace(/[?#].*$/, '') : String(e.title).toLowerCase());
+      if (!seen.has(key)) { seen.add(key); out.push(e); }
+    });
+    XI.ev = { list: out, at: Date.now(), loading: false, errors };
+    if (UI.route === 'dashboard') render();
+  };
+
+  const PF = { meet: 'Google Meet', zoom: 'Zoom', teams: 'Teams' };
+  function upcomingBody() {
+    if (!XI.loaded) return null;
+    if (!SOURCES.some(on)) return null;
+    XI.loadEvents(false);
+    const now = Date.now();
+    const shown = XI.ev.shown = XI.ev.list.filter(e => Date.parse(e.end) > now).slice(0, 6);
+    const errs = Object.keys(XI.ev.errors).map(k => `<p class="tiny" style="color:var(--danger)">${esc(name(k))}: ${esc(XI.ev.errors[k])}</p>`).join('');
+    if (!XI.ev.at) return `<p class="small muted">${t('kxLoading')}</p>`;
+    const rows = shown.map((e, i) => {
+      const live = Date.parse(e.start) <= now;
+      const when = e.allDay ? fmtDate(e.start) + ' — ' + t('kxAllDay') : fmtDateTime(e.start);
+      return `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:160px"><b class="small">${esc(e.title)}</b>
+        <div class="tiny muted">${live ? `<span class="badge ok">${t('kxNow')}</span> ` : ''}${esc(when)}${PF[e.platform] ? ' · ' + PF[e.platform] : ''}${e.location ? ' · ' + esc(e.location) : ''}</div></div>
+        <div class="chips">${e.url ? `<button class="btn sm ghost" data-act="kxLink" data-url="${esc(e.url)}">${t('kxJoin')} ↗</button>` : ''}<button class="btn sm" data-act="kxRecEvent" data-i="${i}">${ic('mic')}${t('kxRecord')}</button></div></div>`;
+    }).join('');
+    return (rows || `<p class="small muted">${t('kxNoEvents')}</p>`) + errs +
+      `<div><button class="btn sm ghost" data-act="kxEvRefresh" ${XI.ev.loading ? 'disabled' : ''}>${ic('refresh')}${XI.ev.loading ? t('kxLoading') : t('kxRefresh')}</button></div>`;
+  }
+
+  /* ---------------- Zoom cloud recordings ---------------- */
+  function localDT(iso) { const d = new Date(iso || Date.now()); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }
+  function zoomModal(md_) {
+    let body;
+    if (md_.err) body = `<p class="small" style="color:var(--danger)">${esc(md_.err)}</p>`;
+    else if (!md_.list) body = `<p class="small muted">${t('kxLoading')}</p>`;
+    else if (!md_.list.length) body = `<p class="small muted">${t('kxZoomNone')}</p>`;
+    else body = md_.list.map((r, i) => `<div class="option" style="cursor:default">${ic('monitor')}<div style="flex:1;min-width:0"><b>${esc(r.title)}</b>
+      <span class="small muted">${r.start ? esc(fmtDateTime(r.start)) : ''}${r.durationMin ? ' · ' + t('kxMin', { n: fmtNum(r.durationMin) }) : ''}</span></div>
+      ${r.hasTranscript ? `<button class="btn sm primary" data-act="kxZoomImport" data-i="${i}" ${md_.busy ? 'disabled' : ''}>${md_.busy === i + 1 ? t('kxLoading') : t('kxImport')}</button>` : `<span class="badge">${t('kxNoTranscript')}</span>`}</div>`).join('');
+    return modalBox(t('kxZoomTitle'), body, `<button class="btn primary" data-act="modalClose">${t('close')}</button>`);
+  }
+
   /* ---------------- auto-send after processing ---------------- */
   XI.auto = async function (m) {
     if (!m || m.sample) return;
@@ -278,6 +361,7 @@
     modalHtml = function () {
       const md_ = UI.modal;
       if (md_ && md_.type === 'share') return shareModal(md_);
+      if (md_ && md_.type === 'kxZoom') return zoomModal(md_);
       return oModal.apply(this, arguments);
     };
     const oShare = A.shareModal;
@@ -291,6 +375,43 @@
     };
 
     A.kxIntGo = () => { UI.modal = null; go('integrations'); };
+
+    // Dashboard: replace the static "connect your calendar" note with real upcoming meetings.
+    const oDash = VIEWS.dashboard;
+    VIEWS.dashboard = function () {
+      const h = oDash.apply(this, arguments);
+      const body = upcomingBody();
+      if (body == null) return h;
+      const marker = `<p class="small muted">${t('upcomingOff')}</p><button class="btn sm" data-act="nav" data-to="integrations" style="align-self:flex-start">${ic('cal')}${t('viewIntegrations')}</button>`;
+      return h.includes(marker) ? h.replace(marker, body) : h;
+    };
+    A.kxEvRefresh = () => { XI.loadEvents(true); render(); };
+    A.kxRecEvent = el => {
+      const e = (XI.ev.shown || [])[+el.dataset.i];
+      if (!e) return;
+      X.command({ cmd: 'prepareRecord', meeting: { title: e.title, url: e.url || '', platform: e.platform } });
+      if (REC.form && REC.state === 'idle' && e.attendees && e.attendees.length) { REC.form.participants = e.attendees.join(', '); render(); }
+    };
+
+    A.kxZoomRecs = () => {
+      const md_ = UI.modal = { type: 'kxZoom', list: null, err: null, busy: 0 };
+      render();
+      api().run('zoom', 'recordings', { days: 30 })
+        .then(list => { md_.list = list || []; })
+        .catch(e => { md_.err = (e && e.message) || String(e); })
+        .finally(() => { if (UI.modal === md_) render(); });
+    };
+    A.kxZoomImport = async el => {
+      const md_ = UI.modal, i = +el.dataset.i, r = md_ && md_.list && md_.list[i];
+      if (!r) return;
+      md_.busy = i + 1; md_.err = null; render();
+      try {
+        const tr = await api().run('zoom', 'transcript', { id: r.id });
+        if (UI.modal !== md_) return;
+        UI.modal = { type: 'import', form: { date: localDT(tr.start || r.start), platform: 'zoom', title: tr.title || r.title, text: tr.text } };
+      } catch (e) { md_.err = (e && e.message) || String(e); md_.busy = 0; }
+      render();
+    };
     A.kxIntEdit = el => { const k = el.dataset.k; XI.open = k; XI.form[k] = {}; XI.err[k] = null; XI.choices[k] = null; render(); };
     A.kxIntCancel = el => { const k = el.dataset.k; XI.open = null; XI.form[k] = {}; XI.err[k] = null; XI.choices[k] = null; render(); };
 
@@ -304,6 +425,7 @@
       XI.busy[k] = true; XI.err[k] = null; render();
       pr.then(state => {
         XI.state = state || XI.state; XI.open = null; XI.form[k] = {}; XI.choices[k] = null;
+        if (SOURCES.includes(k)) XI.ev.at = 0;
         toast(t(okMsg, { s: name(k) }));
       }).catch(e => {
         if (e && e.code === 'choose' && e.choices) { XI.choices[k] = { field: e.field, choices: e.choices }; XI.open = k; }
@@ -314,7 +436,7 @@
     A.kxIntCheck = el => connect(el.dataset.k, {}, 'intOk');
     A.kxIntRemove = async el => {
       const k = el.dataset.k;
-      try { XI.state = await api().remove(k); XI.err[k] = null; toast(t('intRemoved', { s: name(k) })); }
+      try { XI.state = await api().remove(k); XI.err[k] = null; if (SOURCES.includes(k)) { XI.ev = { list: [], at: 0, loading: false, errors: {} }; } toast(t('intRemoved', { s: name(k) })); }
       catch (e) { XI.err[k] = e.message || String(e); }
       render();
     };

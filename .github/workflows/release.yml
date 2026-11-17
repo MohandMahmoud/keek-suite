@@ -1,0 +1,128 @@
+# Builds KEEK Desktop for Windows, macOS and Linux, zips the browser extension,
+# and publishes everything as one GitHub Release.
+#
+#   git tag v1.0.1 && git push origin v1.0.1      ← builds and publishes v1.0.1
+#   (or: Actions → Release → Run workflow → enter a version)
+#
+# File names never change, so these links always point to the newest release:
+#   https://github.com/<owner>/<repo>/releases/latest/download/KEEK-Setup.exe
+#   https://github.com/<owner>/<repo>/releases/latest/download/KEEK-mac.dmg
+#   https://github.com/<owner>/<repo>/releases/latest/download/KEEK-linux.AppImage
+#   https://github.com/<owner>/<repo>/releases/latest/download/KEEK-linux.deb
+#   https://github.com/<owner>/<repo>/releases/latest/download/KEEK-extension.zip
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 1.0.1'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: --win
+          - os: macos-latest
+            target: --mac
+          - os: ubuntu-latest
+            target: --linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Version from tag
+        id: v
+        shell: bash
+        run: |
+          V="${{ github.event.inputs.version }}"
+          [ -z "$V" ] && V="${GITHUB_REF_NAME#v}"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: Copy shared app into the desktop app
+        run: node tools/sync.mjs
+
+      - name: Install
+        working-directory: desktop
+        run: |
+          npm ci
+          npm version ${{ steps.v.outputs.version }} --no-git-tag-version --allow-same-version
+
+      - name: Build installers
+        working-directory: desktop
+        shell: bash
+        env:
+          # No Apple / Windows signing certificates yet: macOS gets an ad-hoc signature
+          # (needed to run on Apple Silicon); Windows is unsigned. See docs/11-releases.md.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          EXTRA=""
+          if [ "${{ matrix.target }}" = "--mac" ]; then EXTRA="-c.mac.identity=-"; fi
+          npx electron-builder ${{ matrix.target }} --publish never $EXTRA
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: keek-${{ runner.os }}
+          if-no-files-found: error
+          path: |
+            desktop/dist/KEEK-Setup.exe
+            desktop/dist/KEEK-mac.dmg
+            desktop/dist/KEEK-linux.AppImage
+            desktop/dist/KEEK-linux.deb
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: v
+        run: |
+          V="${{ github.event.inputs.version }}"
+          [ -z "$V" ] && V="${GITHUB_REF_NAME#v}"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+
+      - name: Zip the browser extension
+        run: |
+          node tools/sync.mjs
+          (cd extension && zip -qr ../out/KEEK-extension.zip .)
+          ls -la out
+
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v${{ steps.v.outputs.version }}"
+          NOTES="Download page: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" out/* --clobber
+          else
+            gh release create "$TAG" out/* --title "KEEK $TAG" --notes "$NOTES" --target "${{ github.sha }}" --latest
+          fi
