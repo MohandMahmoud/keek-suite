@@ -111,7 +111,6 @@ footer nav{margin-inline-start:auto;display:flex;gap:16px}
     <a class="brand" href="#top"><img src="logo.jpg" alt=""><span>KEEK</span></a>
     <nav>
       <a class="chip hide-sm" href="#install" data-i="navInstall">التثبيت</a>
-      <a class="chip hide-sm" id="ghLink" href="#" target="_blank" rel="noopener">GitHub</a>
       <button class="chip" id="langBtn" type="button">English</button>
       <button class="chip" id="themeBtn" type="button" aria-label="Theme">◐</button>
     </nav>
@@ -367,7 +366,6 @@ footer nav{margin-inline-start:auto;display:flex;gap:16px}
     var meta = document.getElementById('relMeta');
     meta.innerHTML = mobile ? s.mobile : none ? s.soon : rel ? s.version + ' <b dir="ltr">' + rel.tag_name + '</b> · ' + s.released + ' ' + fmtDate(rel.published_at) : '';
     ['relLink'].forEach(function (id) { var e = document.getElementById(id); if (e) e.href = GH + '/releases'; });
-    document.getElementById('ghLink').href = GH;
     document.getElementById('ghLink2').href = GH;
     document.getElementById('docsLink').href = GH + '#readme';
     document.getElementById('yr').textContent = new Date().getFullYear();
