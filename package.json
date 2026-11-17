@@ -6,7 +6,7 @@
   "scripts": {
     "extract": "python3 tools/extract_app.py",
     "sync": "node tools/sync.mjs",
-    "test": "node --test shared/nlp/keek-nlp.test.js desktop/test/main-modules.test.js",
+    "test": "node --test shared/nlp/keek-nlp.test.js shared/integrations/keek-integrations.test.js desktop/test/main-modules.test.js",
     "e2e": "node tools/smoke-test.cjs && node tools/desktop-renderer-smoke.cjs && node tools/extension-smoke.cjs",
     "desktop": "cd desktop && npm start"
   },

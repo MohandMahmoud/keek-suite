@@ -61,6 +61,38 @@
     async transcribe(bytes, o) { await ready; return nlp.transcribe(Object.assign({ data: bytes }, o)); }
   };
 
+  /* ---------- integrations (Slack/Notion/Linear/Jira/webhooks) ---------- */
+  const INT_KEY = 'keek-integrations';
+  const intMgr = window.KeekIntegrations ? window.KeekIntegrations.createManager({
+    load: () => kv.get(INT_KEY),
+    save: a => kv.set(INT_KEY, a)
+  }) : null;
+  // Slack, Notion, Linear and *.atlassian.net are in host_permissions. Webhooks and self-hosted
+  // Jira sites need an optional permission, which Chrome only grants from a click — so this must be
+  // called synchronously from the click handler, before anything is awaited.
+  function askOrigin(kind, input) {
+    if (!hasChrome || !chrome.permissions || !input) return Promise.resolve(true);
+    let raw = kind === 'webhooks' ? input.url : kind === 'jira' ? input.site : '';
+    if (!raw) return Promise.resolve(true);
+    if (kind === 'jira' && !/^https?:\/\//i.test(raw)) raw = 'https://' + raw;
+    let u; try { u = new URL(String(raw).trim()); } catch (e) { return Promise.resolve(true); } // the module reports bad URLs
+    if (kind === 'jira' && /\.atlassian\.net$/i.test(u.hostname)) return Promise.resolve(true);
+    return chrome.permissions.request({ origins: [u.protocol + '//' + u.hostname + '/*'] });
+  }
+  const intApi = intMgr && {
+    list: () => intMgr.list(),
+    connect(kind, input) {
+      const perm = askOrigin(kind, input);
+      return perm.then(ok => {
+        if (!ok) { const e = new Error('Chrome permission to reach that address was declined.'); e.code = 'auth'; throw e; }
+        return intMgr.connect(kind, input);
+      });
+    },
+    setOptions: (kind, patch) => intMgr.setOptions(kind, patch),
+    remove: kind => intMgr.remove(kind),
+    send: (kind, payload) => intMgr.send(kind, payload)
+  };
+
   /* ---------- window.claude shim (what the original app expects) ---------- */
   const db = {
     collection(path) {
@@ -140,6 +172,7 @@
   window.KEEK_PLATFORM = {
     kind,
     nlp: nlpApi,
+    integrations: intApi,
     capture,
     initialCommand,
     bridge: {

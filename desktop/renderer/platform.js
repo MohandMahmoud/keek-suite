@@ -12,7 +12,7 @@
     const r = await promise;
     if (!r || r.ok === false) {
       const err = new Error((r && r.error && r.error.message) || 'IPC error');
-      if (r && r.error) { err.code = r.error.code; err.provider = r.error.provider; }
+      if (r && r.error) { err.code = r.error.code; err.provider = r.error.provider; err.field = r.error.field; err.choices = r.error.choices; err.created = r.error.created; }
       throw err;
     }
     return r.value;
@@ -85,6 +85,13 @@
       onCommand: f => N.onCommand(f),
       report: s => N.reportState(s),
       regenToken: () => call(N.regenToken())
+    },
+    integrations: {
+      list: () => call(N.intList()),
+      connect: (kind, input) => call(N.intConnect(kind, input)),
+      setOptions: (kind, patch) => call(N.intOptions(kind, patch)),
+      remove: kind => call(N.intRemove(kind)),
+      send: (kind, payload) => call(N.intSend(kind, payload))
     },
     info: () => call(N.appInfo()),
     openExternal: url => N.openExternal(url),

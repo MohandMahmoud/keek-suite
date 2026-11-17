@@ -61,6 +61,16 @@ module.exports = function createConfig(userDataDir, safeStorage) {
       save();
       return removed;
     },
+    /** Integration connections (Slack/Notion/Linear/Jira/webhooks) — stored encrypted as one blob. */
+    integrations() {
+      if (!data.integrations) return {};
+      try { return JSON.parse(dec(data.integrations)) || {}; } catch (e) { return {}; }
+    },
+    setIntegrations(all) {
+      if (all && Object.keys(all).length) data.integrations = enc(JSON.stringify(all));
+      else delete data.integrations;
+      save();
+    },
     token: () => data.bridgeToken,
     regenToken() { data.bridgeToken = newToken(); save(); return data.bridgeToken; }
   };

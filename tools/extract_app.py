@@ -64,12 +64,14 @@ open(os.path.join(OUT, 'logo.jpg'), 'wb').write(base64.b64decode(lm.group(1)))
 
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
        "font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob: data:; "
-       "connect-src 'self' blob: data: https://api.groq.com https://generativelanguage.googleapis.com")
+       "connect-src 'self' blob: data: https: http://localhost:* http://127.0.0.1:*")
 head = head.replace('<meta charset="utf-8">', f'<meta charset="utf-8">\n<meta http-equiv="Content-Security-Policy" content="{CSP}">', 1)
 index = (head.rstrip() + '\n'
          '<script src="keek-nlp.js"></script>\n'
+         '<script src="keek-integrations.js"></script>\n'
          '<script src="platform.js"></script>\n'
          '<script src="keekx.js"></script>\n'
+         '<script src="keekx-integrations.js"></script>\n'
          '<script src="app.js"></script>\n'
          '</body>\n</html>\n')
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8').write(index)

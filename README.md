@@ -98,4 +98,5 @@ The end-to-end tests mock Groq, so no real keys are needed. See [docs/09-develop
 7. [Privacy & security](docs/07-privacy-security.md)
 8. [Troubleshooting](docs/08-troubleshooting.md)
 9. [Development, testing & packaging](docs/09-development.md)
+10. [Integrations (Slack, Notion, Linear, Jira, webhooks)](docs/10-integrations.md)
 10. [دليل البدء السريع بالعربية](docs/ar/README-ar.md)

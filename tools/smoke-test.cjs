@@ -145,6 +145,53 @@ const ANALYSIS = {
     await page.screenshot({ path: path.join(OUT, '7-review.png') });
   });
 
+  await step('integrations: connect Slack + Linear, send a meeting from Share', async () => {
+    const hits = { slack: [], linear: [] };
+    await page.route('https://hooks.slack.com/**', route => {
+      if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+      hits.slack.push(JSON.parse(route.request().postData() || '{}'));
+      return route.fulfill({ status: 200, headers: cors, body: 'ok' });
+    });
+    await page.route('https://api.linear.app/**', route => {
+      if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+      const b = JSON.parse(route.request().postData() || '{}');
+      hits.linear.push(b);
+      const data = b.query.includes('viewer')
+        ? { viewer: { name: 'Sara' }, teams: { nodes: [{ id: 'a', key: 'ENG', name: 'Engineering' }, { id: 'b', key: 'DES', name: 'Design' }] } }
+        : { issueCreate: { success: true, issue: { id: 'i1', identifier: 'ENG-7', url: 'https://linear.app/acme/issue/ENG-7' } } };
+      return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ data }) });
+    });
+    await click('[data-act="nav"][data-to="integrations"]');
+    await click('[data-act="kxIntEdit"][data-k="slack"]');
+    await page.fill('[data-kxi="slack:url"]', 'https://hooks.slack.com/services/T0/B0/abc123');
+    await click('[data-act="kxIntConnect"][data-k="slack"]');
+    await page.waitForSelector('[data-act="kxIntRemove"][data-k="slack"]');
+    await click('[data-act="kxIntEdit"][data-k="linear"]');
+    await page.fill('[data-kxi="linear:apiKey"]', 'lin_api_test');
+    await click('[data-act="kxIntConnect"][data-k="linear"]');
+    await page.waitForSelector('select[data-kxi="linear:teamId"]');           // two teams → choose one
+    await page.selectOption('select[data-kxi="linear:teamId"]', 'a');
+    await click('[data-act="kxIntConnect"][data-k="linear"]');
+    await page.waitForSelector('[data-act="kxIntRemove"][data-k="linear"]');
+    await page.screenshot({ path: path.join(OUT, '8a-integrations.png'), fullPage: true });
+
+    await page.evaluate(() => { const m = S.meetings.find(x => x.title === 'خطة الإطلاق'); go('meeting', { id: m.id }); });
+    await click('[data-act="shareModal"]');
+    await click('[data-act="kxIntSend"][data-k="slack"]');
+    await page.waitForFunction(() => document.querySelector('.modal') && document.querySelector('.modal').innerText.includes('✓'), null, { timeout: 8000 });
+    await click('[data-act="kxIntSend"][data-k="linear"]');
+    await page.waitForFunction(() => document.querySelector('.modal') && document.querySelector('.modal').innerText.includes('ENG-7'), null, { timeout: 8000 });
+    await page.screenshot({ path: path.join(OUT, '8b-share.png') });
+    const last = hits.slack.at(-1);
+    if (!last || !last.text.includes('الإطلاق يوم ١ ديسمبر')) throw new Error('Slack message missing the decision: ' + JSON.stringify(last));
+    const create = hits.linear.find(b => b.query.includes('issueCreate'));
+    if (!create || create.variables.input.teamId !== 'a' || create.variables.input.title !== 'تجهيز حملة التسويق') throw new Error('Linear issue not created as expected');
+    const sent = await page.evaluate(() => S.tasks.filter(x => x.ext && x.ext.linear).map(x => x.ext.linear.key));
+    if (sent.join() !== 'ENG-7') throw new Error('task not marked as sent: ' + sent);
+    if (!(await page.$('[data-act="kxIntSend"][data-k="linear"][disabled]'))) throw new Error('Linear send should be disabled once everything is sent');
+    await click('[data-act="modalClose"]');
+  });
+
   await step('English UI + dark theme render', async () => {
     await click('[data-act="setLang"]');
     await click('[data-act="nav"][data-to="integrations"]');

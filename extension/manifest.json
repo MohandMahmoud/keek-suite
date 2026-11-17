@@ -16,8 +16,13 @@
   "host_permissions": [
     "https://api.groq.com/*",
     "https://generativelanguage.googleapis.com/*",
-    "http://127.0.0.1/*"
+    "http://127.0.0.1/*",
+    "https://hooks.slack.com/*",
+    "https://api.notion.com/*",
+    "https://api.linear.app/*",
+    "https://*.atlassian.net/*"
   ],
+  "optional_host_permissions": ["https://*/*", "http://localhost/*"],
   "content_scripts": [
     {
       "matches": [

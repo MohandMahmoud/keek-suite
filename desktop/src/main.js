@@ -5,13 +5,14 @@ const { app, BrowserWindow, ipcMain, dialog, shell, session, desktopCapturer, sa
 const path = require('path');
 const fs = require('fs/promises');
 const KeekNLP = require('./keek-nlp.js');
+const KeekIntegrations = require('./keek-integrations.js');
 const createStore = require('./store.js');
 const createConfig = require('./config.js');
 const { startBridge } = require('./bridge.js');
 
 const RENDERER = path.join(__dirname, '..', 'renderer');
 const DEV = process.argv.includes('--dev');
-let win = null, store, config, nlp, bridge = null;
+let win = null, store, config, nlp, integrations, bridge = null;
 let recState = { state: 'idle', elapsedMs: 0, title: '' };
 
 if (!app.requestSingleInstanceLock()) { app.quit(); }
@@ -66,7 +67,7 @@ function handle(channel, fn) {
     try { return { ok: true, value: await fn(e, ...args) }; }
     catch (err) {
       if (err && err.code !== 'no_key') console.error('[ipc]', channel, err && err.message);
-      return { ok: false, error: { code: (err && err.code) || 'error', message: String((err && err.message) || err), provider: err && err.provider } };
+      return { ok: false, error: { code: (err && err.code) || 'error', message: String((err && err.message) || err), provider: err && err.provider, field: err && err.field, choices: err && err.choices, created: err && err.created } };
     }
   });
 }
@@ -115,6 +116,14 @@ function registerIpc() {
     });
   });
 
+  // Integrations: tokens stay in this process; the page only sees connected/info.
+  const kind = k => { if (!KeekIntegrations.KINDS.includes(k)) throw Object.assign(new Error('Unknown integration'), { code: 'invalid' }); return k; };
+  handle('int:list', () => integrations.list());
+  handle('int:connect', (e, k, input) => integrations.connect(kind(k), input && typeof input === 'object' ? input : {}));
+  handle('int:options', (e, k, patch) => integrations.setOptions(kind(k), patch || {}));
+  handle('int:remove', (e, k) => integrations.remove(kind(k)));
+  handle('int:send', (e, k, payload) => integrations.send(kind(k), payload));
+
   handle('file:save', async (e, filename, data) => {
     const name = String(filename || 'keek.txt').replace(/[\\/:*?"<>|]/g, '').slice(0, 120) || 'keek.txt';
     const r = await dialog.showSaveDialog(win, { defaultPath: path.join(app.getPath('downloads'), name) });
@@ -161,6 +170,7 @@ app.whenReady().then(async () => {
   store = createStore(path.join(userData, 'data'));
   config = createConfig(userData, safeStorage);
   nlp = KeekNLP.create(config.nlp(), { log: m => DEV && console.log('[nlp]', m) });
+  integrations = KeekIntegrations.createManager({ load: async () => config.integrations(), save: async a => config.setIntegrations(a) });
   registerIpc();
   setupMedia();
   createWindow();

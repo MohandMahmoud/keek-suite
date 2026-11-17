@@ -38,7 +38,8 @@ and the bridge API refuses to start without `consent:true`.
 
 - `contextIsolation`, `sandbox`, no `nodeIntegration`; a narrow preload API; IPC rejects senders that
   are not the app’s own `file://` page.
-- Content-Security-Policy: scripts only from the app; network only to Groq, Gemini, and blob/data URLs.
+- Content-Security-Policy: scripts only from the app; network only over https (AI providers and the integrations you connect), localhost, and blob/data URLs.
+- Integration tokens (Slack, Notion, Linear, Jira, webhooks) stay in the main process, encrypted with `safeStorage`; the page only sees whether each one is connected — [docs/10](10-integrations.md).
 - External links open in the system browser; in-app navigation away from the app is blocked.
 - Permissions granted only to the app page: microphone, screen/system-audio capture, notifications, clipboard.
 - Local storage path segments are sanitised; writes are atomic.
