@@ -46,7 +46,9 @@ The builds are not signed with paid certificates yet:
 The page explains both steps. To remove the warnings:
 
 - **macOS:** an Apple Developer ID ($99/year). Add the `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`,
-  `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID` secrets, drop `-c.mac.identity=-` from the workflow,
-  and add `"notarize": true` to `build.mac`.
+  `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID` secrets, drop
+  `-c.mac.identity=- -c.mac.hardenedRuntime=false` from the workflow, and add `"notarize": true` to `build.mac`.
+  (Never combine the ad-hoc identity with the hardened runtime: library validation then refuses to load
+  Electron Framework and the app crashes on launch with "KEEK quit unexpectedly".)
 - **Windows:** a code-signing certificate (or Azure Trusted Signing), passed as `WIN_CSC_LINK` /
   `WIN_CSC_KEY_PASSWORD`.

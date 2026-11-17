@@ -77,7 +77,10 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
           EXTRA=""
-          if [ "${{ matrix.target }}" = "--mac" ]; then EXTRA="-c.mac.identity=-"; fi
+          # Ad-hoc signing + hardened runtime crashes at launch ("KEEK quit unexpectedly"):
+          # library validation rejects Electron Framework because ad-hoc code has no Team ID.
+          # Hardened runtime only matters for notarisation, so turn it off for ad-hoc builds.
+          if [ "${{ matrix.target }}" = "--mac" ]; then EXTRA="-c.mac.identity=- -c.mac.hardenedRuntime=false"; fi
           npx electron-builder ${{ matrix.target }} --publish never $EXTRA
 
       - uses: actions/upload-artifact@v4
