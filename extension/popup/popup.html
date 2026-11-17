@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>KEEK</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<header>
+  <img src="../icons/icon48.png" alt="" width="32" height="32">
+  <div><b>KEEK</b><small id="sub"></small></div>
+  <button id="lang" class="link" type="button"></button>
+</header>
+
+<section class="card" id="meetingCard">
+  <div class="row"><span class="pill" id="platform"></span><span class="state" id="callState"></span></div>
+  <div class="title" id="meetingTitle"></div>
+</section>
+
+<label class="consent"><input type="checkbox" id="consent"><span id="consentText"></span></label>
+
+<section class="group">
+  <h2 id="hBrowser"></h2>
+  <button class="btn primary" id="recTab" type="button"></button>
+  <p class="hint" id="recTabHint"></p>
+</section>
+
+<section class="group">
+  <h2 id="hDesktop"></h2>
+  <div id="deskStatus" class="status"></div>
+  <div id="deskActions" class="actions"></div>
+  <div id="pairBox" class="pair hidden">
+    <input id="pairCode" placeholder="ABCD-EFGH-JKLM" autocomplete="off" spellcheck="false" dir="ltr">
+    <button class="btn" id="pairBtn" type="button"></button>
+  </div>
+  <p class="hint" id="deskHint"></p>
+</section>
+
+<footer><button class="btn ghost" id="openApp" type="button"></button></footer>
+<script src="popup.js"></script>
+</body>
+</html>

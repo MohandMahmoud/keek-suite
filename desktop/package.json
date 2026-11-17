@@ -1,0 +1,45 @@
+{
+  "name": "keek-desktop",
+  "productName": "KEEK",
+  "version": "1.0.0",
+  "description": "KEEK meeting intelligence — records system audio + microphone, transcribes and analyses meetings with free Groq and Gemini APIs.",
+  "main": "src/main.js",
+  "private": true,
+  "author": "KEEK",
+  "license": "UNLICENSED",
+  "scripts": {
+    "sync": "node ../tools/sync.mjs",
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "test": "node --test ../shared/nlp/keek-nlp.test.js test/main-modules.test.js",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "app.keek.desktop",
+    "productName": "KEEK",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["src/**", "renderer/**", "package.json"],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["dmg"],
+      "icon": "build/icon.png",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "KEEK records your microphone during meetings you choose to record.",
+        "NSAudioCaptureUsageDescription": "KEEK records computer audio during meetings you choose to record."
+      }
+    },
+    "win": { "target": ["nsis"], "icon": "build/icon.ico" },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "shortcutName": "KEEK" },
+    "linux": { "target": ["AppImage", "deb"], "category": "Office", "icon": "build/icon.png" }
+  }
+}

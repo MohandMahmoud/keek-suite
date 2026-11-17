@@ -1,0 +1,16 @@
+{
+  "name": "keek-suite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "KEEK desktop app + browser extension + free Groq/Gemini NLP module",
+  "scripts": {
+    "extract": "python3 tools/extract_app.py",
+    "sync": "node tools/sync.mjs",
+    "test": "node --test shared/nlp/keek-nlp.test.js desktop/test/main-modules.test.js",
+    "e2e": "node tools/smoke-test.cjs && node tools/desktop-renderer-smoke.cjs && node tools/extension-smoke.cjs",
+    "desktop": "cd desktop && npm start"
+  },
+  "devDependencies": {
+    "playwright": "^1.50.0"
+  }
+}
